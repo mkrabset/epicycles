@@ -91,6 +91,7 @@ function draw(id) {
   ctx.fill();
 
   var pos=c0.constant
+  var lastLineEndpoint=pos  // Last endpoint a line has been drawn to (used to avoid drawing lines shorter than 1 unit (pixel))
   ctx.lineWidth = 1;
   
   for (var i=0;i<c.length;i++) {
@@ -107,14 +108,15 @@ function draw(id) {
       ctx.stroke()
     }
 
-    // draw vector
+    // draw new line if we have moved more than 1 pixel from last line endpoint
     var newpos=complex.add(pos,term)
-    if (mag>1) {
+    if (complex.magnitude(complex.add(newpos,complex.neg(lastLineEndpoint))) > 1) {
       ctx.beginPath()
       ctx.strokeStyle = "rgba(0, 0, 0, 255)";
-      ctx.moveTo(pos.a,pos.b)
+      ctx.moveTo(lastLineEndpoint.a,lastLineEndpoint.b)
       ctx.lineTo(newpos.a, newpos.b)
       ctx.stroke()
+      lastLineEndpoint=newpos
     }
     pos=newpos
   }
@@ -183,6 +185,7 @@ window.onload = function() {
   }
 
   setImage(images[getSelectedImage()], getSelectedMaxFreq(), getSelectedSortOrder())
+  timedelta=parseFloat(document.getElementById("speed").value)
   
   draw('canvas');
 }
@@ -197,7 +200,7 @@ window.onload = function() {
      </td>
      <td>
        Max frequency:
-       <input id="maxFreq" min="1" max="200" type="number" value="8"></input>
+       <input id="maxFreq" min="1" max="200" type="number" value="20"></input>
      </td>
      <td>
        Sort order:
@@ -212,11 +215,11 @@ window.onload = function() {
      </td>
      <td>
        Speed:
-       <select id="speed" >
+       <select id="speed">
          <option value="0.0001">slow</option>
          <option value="0.0002">x 2</option>
          <option value="0.0004">x 4</option>
-         <option value="0.0008">x 8</option>
+         <option value="0.0008" selected="selected">x 8</option>
          <option value="0.0016">x 16</option>
          <option value="0.0032">x 32</option>
          <option value="0.0064">x 64</option>
