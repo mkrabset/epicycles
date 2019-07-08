@@ -1,0 +1,233 @@
+<html>
+ <body background="bg.png">
+  <script src="bundle.js"></script> 
+  <script type="application/x-javascript">
+
+var paths=require('paths')
+var complex=require('complex')
+var fourier=require('fourier')
+var images=require('images')
+
+var t=0;
+var maxFreq=200
+var blanked=false;
+var presentation = null
+var endpoints=[]
+var timedelta=0.0001
+
+function setImage(pathString, mfreq, sortOrder) {
+  console.log(mfreq)
+  presentation=getPresentationData(pathString, mfreq, sortOrder)
+  endpoints=[]
+  t=0
+  maxFreq=mfreq
+}
+
+function getPresentationData(pathString, mfreq, sortOrder) {
+  var numSegments=400
+  var points=paths.getNormalizedPath(pathString,numSegments).map(p=>({a:p.a,b:-p.b}))
+  var fourierConstants=fourier.fourier(points)
+  var reconstructedPath=fourier.invfourier(fourierConstants,numSegments/2)
+  if (sortOrder==1) {
+    fourierConstants.sort((c1,c2)=>complex.magnitude(c2.constant)-complex.magnitude(c1.constant))
+  } else if (sortOrder==2) {
+    fourierConstants.sort((c1,c2)=>complex.magnitude(c1.constant)-complex.magnitude(c2.constant))
+  } else if (sortOrder==3) {
+    fourierConstants.sort((c1,c2)=>c1.freq-c2.freq) // freq
+  } else if (sortOrder==4) {
+    fourierConstants.sort((c1,c2)=>c2.freq-c1.freq) // -freq
+  }else if (sortOrder==5) {
+    fourierConstants.sort((c1,c2)=>Math.abs(c1.freq)-Math.abs(c2.freq)) // abs(freq)
+  }else if (sortOrder==6) {
+    fourierConstants.sort((c1,c2)=>Math.abs(c2.freq)-Math.abs(c1.freq)) // -abs(freq)
+  }
+ 
+  return {
+    backgroundPath: reconstructedPath,
+    freq0Constant: fourierConstants.filter(c=>c.freq==0)[0],
+    freqConstants: fourierConstants.filter(c=>Math.abs(c.freq)<mfreq && c.freq!=0)
+  }
+}
+
+function blank(canvas) {
+  var ctx = canvas.getContext("2d");
+  var cx=canvas.width;
+  var cy=canvas.height;    
+  ctx.clearRect(0,0,cx,cy);
+  var s=3;    
+  ctx.strokeStyle = 'rgb(0,0,0)';
+  ctx.fillStyle = 'rgb(0,0,0)';
+  blanked=true;
+}
+
+function calcTerm(c,t) {
+  var expfactor=complex.exp(complex.create(0,2*Math.PI*t*c.freq))
+  return complex.mul(c.constant,expfactor)
+}
+        
+function draw(id) { 
+  var canvas = document.getElementById(id)
+  blank(canvas)
+
+  t+=timedelta
+  if (t>1) t-=1;
+  var ctx = canvas.getContext("2d")
+  ctx.save()
+  ctx.translate(400, 100);
+  ctx.scale(2,2);
+  var c0=presentation.freq0Constant
+  var c=presentation.freqConstants
+  var fig=presentation.backgroundPath
+ 
+  ctx.beginPath()
+  ctx.lineWidth = 2.5;
+  ctx.moveTo(fig[0].a,fig[0].b)
+  for (var i=0;i<fig.length;i++) {
+    ctx.lineTo(fig[i].a,fig[i].b)
+  }
+  
+  ctx.stroke();
+   ctx.fillStyle = '#0a4'  
+  ctx.fill();
+
+  var pos=c0.constant
+  ctx.lineWidth = 1;
+  
+  for (var i=0;i<c.length;i++) {
+    if (Math.abs(c[i].freq)>maxFreq) continue
+
+    var term=calcTerm(c[i],t)
+    var mag=complex.magnitude(term)
+    if (mag>1) {
+      // draw orbit
+      ctx.beginPath()    
+      ctx.moveTo(pos.a+mag,pos.b)
+      ctx.strokeStyle = "rgba(0, 0, 100, "+(0.1+mag/200)+")";
+      ctx.arc(pos.a, pos.b, mag, 0, 2 * Math.PI, false);
+      ctx.stroke()
+    }
+
+    // draw vector
+    var newpos=complex.add(pos,term)
+    if (mag>1) {
+      ctx.beginPath()
+      ctx.strokeStyle = "rgba(0, 0, 0, 255)";
+      ctx.moveTo(pos.a,pos.b)
+      ctx.lineTo(newpos.a, newpos.b)
+      ctx.stroke()
+    }
+    pos=newpos
+  }
+  endpoints.push(pos)
+  while (endpoints.length>1/timedelta-20) {
+    endpoints.shift()
+  }
+  ctx.stroke()
+ 
+  ctx.beginPath()
+  ctx.lineWidth = 2;
+  ctx.moveTo(endpoints[0].a, endpoints[0].b);
+  for (var i=0;i<endpoints.length;i++) {
+    ctx.lineTo(endpoints[i].a, endpoints[i].b)
+  }
+  ctx.strokeStyle = '#ff5'
+  ctx.stroke();
+  ctx.restore()
+  blanked=false
+  setTimeout ( "draw('"+id+"')", 10 );      
+}
+
+function getSelectedImage() {
+  return document.getElementById("selectimage").value
+}
+
+function getSelectedMaxFreq() {
+  return document.getElementById("maxFreq").valueAsNumber
+}
+
+function getSelectedSortOrder() {
+  return document.getElementById("sortOrder").value
+}
+
+window.onload = function() {
+
+  // Create image options
+  Object.keys(images).map(key=>{
+    var opt=document.getElementById("dummyoption").cloneNode()
+    opt.hidden=false
+    opt.innerText=key
+    document.getElementById("selectimage").appendChild(opt)
+  })
+  document.getElementById("dummyoption").hidden=true
+  document.getElementById("selectimage").selectedIndex=1
+
+  // Select image handler
+  document.getElementById("selectimage").onchange=(event) => {
+   setImage(images[event.target.value], getSelectedMaxFreq(), getSelectedSortOrder())
+  }
+
+  // Select max frequency handler
+  document.getElementById("maxFreq").onchange = (event) => {
+    setImage(images[getSelectedImage()], event.target.valueAsNumber, getSelectedSortOrder())
+  }
+
+  // Select orbit sort-order handler
+  document.getElementById("sortOrder").onchange = (event) => {
+    setImage(images[getSelectedImage()], getSelectedMaxFreq(), getSelectedSortOrder())
+  }
+
+  // Select speed handler
+  document.getElementById("speed").onchange = (event) => {
+    timedelta=parseFloat(event.target.value)
+    endpoints=[]
+  }
+
+  setImage(images[getSelectedImage()], getSelectedMaxFreq(), getSelectedSortOrder())
+  
+  draw('canvas');
+}
+  </script>
+   <table>
+   <tr>
+     <td>
+       Image:
+       <select id="selectimage">
+         <option id="dummyoption" visible="false">dummy</option>
+       </select>
+     </td>
+     <td>
+       Max frequency:
+       <input id="maxFreq" min="1" max="200" type="number" value="8"></input>
+     </td>
+     <td>
+       Sort order:
+       <select id="sortOrder" >
+         <option value="1">-magnitude</option>
+         <option value="2">magnitude</option>
+         <option value="3">freq</option>
+         <option value="4">-freq</option>
+         <option value="5">abs(freq)</option>
+         <option value="6">-abs(freq)</option>
+       </select>
+     </td>
+     <td>
+       Speed:
+       <select id="speed" >
+         <option value="0.0001">slow</option>
+         <option value="0.0002">x 2</option>
+         <option value="0.0004">x 4</option>
+         <option value="0.0008">x 8</option>
+         <option value="0.0016">x 16</option>
+         <option value="0.0032">x 32</option>
+         <option value="0.0064">x 64</option>
+       </select>
+     </td>
+   </tr>
+   <tr>
+     <td colspan="4"><canvas id="canvas" width="1600" height="1600"/></td>
+   </tr>
+   </table>
+
+ </body>
+</html>
+

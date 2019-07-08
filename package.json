@@ -1,0 +1,14 @@
+{
+  "name": "epicycles",
+  "version": "1.0.0",
+  "main": "epicycles.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "svg-path-to-polygons": "^0.1.0"
+  }
+}
