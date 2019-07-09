@@ -1,5 +1,6 @@
 <html>
  <head>
+  <link rel="stylesheet" href="style.css">
   <script src="bundle.js"></script> 
   <script type="application/x-javascript">
 var paths=require('paths')
@@ -19,6 +20,7 @@ function setImage(pathString, mfreq, sortOrder) {
   endpoints=[]
   t=0
   maxFreq=mfreq
+  document.getElementById("formula").hidden=true
 }
 
 function getPresentationData(pathString, mfreq, sortOrder) {
@@ -137,6 +139,20 @@ function draw(id) {
   setTimeout ( "draw('"+id+"')", 10 );      
 }
 
+function sign(x) {
+  return x>=0 ? "+" : "-"
+}
+
+function updateFormula() {
+  document.getElementById("formula").hidden=false
+  var constants=[presentation.freq0Constant, ...presentation.freqConstants]
+  var formula="$$ f(t) = "
+  formula=formula+constants.map(c=>"("+c.constant.a+sign(c.constant.b)+Math.abs(c.constant.b)+"i) e^{2 \\pi i t * ("+c.freq+")} ").join("+\\\\")
+  formula=formula+"$$"
+  document.getElementById("formula").innerText=formula
+  MathJax.Hub.Queue(["Typeset",MathJax.Hub,document.getElementById("formula")]);
+}
+
 function getSelectedImage() {
   return document.getElementById("selectimage")
 }
@@ -210,25 +226,30 @@ window.onload = function() {
   setImage(images[getSelectedImage().value], getSelectedMaxFreq().valueAsNumber, getSelectedSortOrder().value)
   timedelta=parseFloat(getSelectedSpeed().value)
   
+  document.getElementById("showformula").onclick=(e) => {
+    updateFormula()
+  }
+
   draw('canvas');
 }
   </script>  
+  <script type="text/javascript" async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/latest.js?config=TeX-MML-AM_CHTML">
+  </script>
   </head>
   <body background="bg.png">
-   <table>
-   <tr>
-     <td>
+   <div class="header">
+     <div>
        Image:
        <select id="selectimage">
          <option id="dummyoption" visible="false">dummy</option>
        </select>
-     </td>
-     <td>
+     </div>
+     <div>
        Max frequency:
        <input id="maxFreq" min="1" max="200" type="number" value="20"></input>
-     </td>
-     <td>
-       Sort order:
+     </div>
+     <div>
+      Sort order:
        <select id="sortOrder" >
          <option value="1">-magnitude</option>
          <option value="2">magnitude</option>
@@ -237,8 +258,8 @@ window.onload = function() {
          <option value="5">abs(freq)</option>
          <option value="6">-abs(freq)</option>
        </select>
-     </td>
-     <td>
+     </div>
+     <div>
        Speed:
        <select id="speed">
          <option value="0.0001">slow</option>
@@ -249,13 +270,19 @@ window.onload = function() {
          <option value="0.0032">x 32</option>
          <option value="0.0064">x 64</option>
        </select>
-     </td>
-     <td><a href="https://github.com/mkrabset/epicycles">https://github.com/mkrabset/epicycles</a></td>
-   </tr>
-   <tr>
-     <td colspan="5"><canvas id="canvas" width="1600" height="1000"/></td>
-   </tr>
-   </table>
+     </div>
+     <div>
+       <input id="showformula" type="button" value="Show math function (below)"/>
+     </div>
+     <div class="githublink">
+       <a href="https://github.com/mkrabset/epicycles">https://github.com/mkrabset/epicycles</a>
+     </div>
+   </div>
+
+   <div>
+     <canvas id="canvas" width="1600" height="1000"/>
+   </div>
+   <p id="formula" style="float: left"/>
  </body>
 </html>
 

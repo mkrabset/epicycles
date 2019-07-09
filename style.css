@@ -1,0 +1,9 @@
+div.header div {
+  float:left;
+  margin-right: 30px;
+}
+
+div.header div.githublink {
+  float:right;
+  margin-right: 0px;
+}
