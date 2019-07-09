@@ -1,8 +1,7 @@
 <html>
- <body background="bg.png">
+ <head>
   <script src="bundle.js"></script> 
   <script type="application/x-javascript">
-
 var paths=require('paths')
 var complex=require('complex')
 var fourier=require('fourier')
@@ -213,7 +212,9 @@ window.onload = function() {
   
   draw('canvas');
 }
-  </script>
+  </script>  
+  </head>
+  <body background="bg.png">
    <table>
    <tr>
      <td>
@@ -252,10 +253,9 @@ window.onload = function() {
      <td><a href="https://github.com/mkrabset/epicycles">https://github.com/mkrabset/epicycles</a></td>
    </tr>
    <tr>
-     <td colspan="5"><canvas id="canvas" width="1600" height="1600"/></td>
+     <td colspan="5"><canvas id="canvas" width="1600" height="1000"/></td>
    </tr>
    </table>
-
  </body>
 </html>
 
