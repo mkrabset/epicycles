@@ -1,8 +1,10 @@
 # epicycles
 Rendering svg-paths with epicycles using fourier transform
 
-Installation:
--------------
+## Check it out here:
+https://mkrabset.github.io/pages/epicycles/epicycles.html
+
+## Build:
 ```console
 $ git clone https://github.com/mkrabset/epicycles.git
 $ cd epicycles/
@@ -12,8 +14,7 @@ $ ./buildbundle.sh
 $ firefox file://`pwd`/epicycles.html   # or chrome or whatever...
 ```
 
-Screenshot
-----------
+## Screenshot
 ![Alt text](/screenshot.png?raw=true "Screenshot")
 
 
