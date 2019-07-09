@@ -16,7 +16,6 @@ var endpoints=[]
 var timedelta=0.0001
 
 function setImage(pathString, mfreq, sortOrder) {
-  console.log(mfreq)
   presentation=getPresentationData(pathString, mfreq, sortOrder)
   endpoints=[]
   t=0
@@ -140,52 +139,77 @@ function draw(id) {
 }
 
 function getSelectedImage() {
-  return document.getElementById("selectimage").value
+  return document.getElementById("selectimage")
 }
 
 function getSelectedMaxFreq() {
-  return document.getElementById("maxFreq").valueAsNumber
+  return document.getElementById("maxFreq")
 }
 
 function getSelectedSortOrder() {
-  return document.getElementById("sortOrder").value
+  return document.getElementById("sortOrder")
+}
+
+function getSelectedSpeed() {
+  return document.getElementById("speed")
 }
 
 window.onload = function() {
-
   // Create image options
   Object.keys(images).map(key=>{
     var opt=document.getElementById("dummyoption").cloneNode()
     opt.hidden=false
     opt.innerText=key
-    document.getElementById("selectimage").appendChild(opt)
+    getSelectedImage().appendChild(opt)
   })
   document.getElementById("dummyoption").hidden=true
-  document.getElementById("selectimage").selectedIndex=1
+
+  // Handle query params
+  const urlParams = new URLSearchParams(window.location.search);
+  const imageParam=urlParams.get("image")
+  const maxFreqParam=urlParams.get("maxFreq")
+  const speedParam=urlParams.get("speed")
+
+  if (imageParam!==null && Object.keys(images).includes(imageParam)) {
+    getSelectedImage().value=imageParam
+  } else {
+    getSelectedImage().value="kiwi"
+  }
+
+  if (maxFreqParam!==null) {
+    getSelectedMaxFreq().valueAsNumber=Math.min(200,Math.max(2,parseInt(maxFreqParam)))
+  }
+
+  if (speedParam!==null) {
+    const log2speed=Math.pow(2,Math.min(6,Math.max(0,Math.round(Math.log2(parseInt(speedParam))))))/10000
+
+    getSelectedSpeed().value=log2speed
+  }
+
 
   // Select image handler
-  document.getElementById("selectimage").onchange=(event) => {
-   setImage(images[event.target.value], getSelectedMaxFreq(), getSelectedSortOrder())
+  getSelectedImage().onchange=(event) => {
+   setImage(images[event.target.value], getSelectedMaxFreq().valueAsNumber, getSelectedSortOrder().value)
   }
 
   // Select max frequency handler
-  document.getElementById("maxFreq").onchange = (event) => {
-    setImage(images[getSelectedImage()], event.target.valueAsNumber, getSelectedSortOrder())
+  getSelectedMaxFreq().onchange = (event) => {
+    setImage(images[getSelectedImage().value], event.target.valueAsNumber, getSelectedSortOrder().value)
   }
 
   // Select orbit sort-order handler
-  document.getElementById("sortOrder").onchange = (event) => {
-    setImage(images[getSelectedImage()], getSelectedMaxFreq(), getSelectedSortOrder())
+  getSelectedSortOrder().onchange = (event) => {
+    setImage(images[getSelectedImage().value], getSelectedMaxFreq().valueAsNumber, getSelectedSortOrder().value)
   }
 
   // Select speed handler
-  document.getElementById("speed").onchange = (event) => {
+  getSelectedSpeed().onchange = (event) => {
     timedelta=parseFloat(event.target.value)
     endpoints=[]
   }
 
-  setImage(images[getSelectedImage()], getSelectedMaxFreq(), getSelectedSortOrder())
-  timedelta=parseFloat(document.getElementById("speed").value)
+  setImage(images[getSelectedImage().value], getSelectedMaxFreq().valueAsNumber, getSelectedSortOrder().value)
+  timedelta=parseFloat(getSelectedSpeed().value)
   
   draw('canvas');
 }
@@ -219,7 +243,7 @@ window.onload = function() {
          <option value="0.0001">slow</option>
          <option value="0.0002">x 2</option>
          <option value="0.0004">x 4</option>
-         <option value="0.0008" selected="selected">x 8</option>
+         <option value="0.0008" selected="selected" >x 8</option>
          <option value="0.0016">x 16</option>
          <option value="0.0032">x 32</option>
          <option value="0.0064">x 64</option>
